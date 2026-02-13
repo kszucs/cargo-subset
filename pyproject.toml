@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cargo-subset"
+version = "0.1.0"
+description = "Workspace-local Rust module dependency walker via cargo metadata"
+authors = [{ name = "Workspace User" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "click>=8.1",
+  "toolz>=0.12",
+  # Pin to versions compatible with each other to avoid ABI/type mismatches.
+  "tree_sitter==0.20.4",
+  "tree_sitter_languages==1.10.2",
+]
+
+[project.scripts]
+cargo-subset = "cargo_subset.cli:cli"
