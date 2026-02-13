@@ -19,8 +19,12 @@ def compare_directories(actual_dir: Path, expected_dir: Path) -> list[str]:
     differences = []
 
     # Get all files in both directories
-    actual_files = {f.relative_to(actual_dir) for f in actual_dir.rglob("*") if f.is_file()}
-    expected_files = {f.relative_to(expected_dir) for f in expected_dir.rglob("*") if f.is_file()}
+    actual_files = {
+        f.relative_to(actual_dir) for f in actual_dir.rglob("*") if f.is_file()
+    }
+    expected_files = {
+        f.relative_to(expected_dir) for f in expected_dir.rglob("*") if f.is_file()
+    }
 
     # Check for missing/extra files
     missing_files = expected_files - actual_files
@@ -48,7 +52,7 @@ def compare_directories(actual_dir: Path, expected_dir: Path) -> list[str]:
                 actual_content.splitlines(keepends=True),
                 fromfile=f"expected/{rel_path}",
                 tofile=f"actual/{rel_path}",
-                lineterm=""
+                lineterm="",
             )
             differences.append("".join(diff))
 

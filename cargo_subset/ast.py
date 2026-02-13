@@ -74,6 +74,7 @@ def _get_parser():
     global _parser
     if _parser is None:
         from tree_sitter_languages import get_parser
+
         _parser = get_parser("rust")
     return _parser
 
@@ -100,8 +101,10 @@ def extract_macro_exports(file_path: Path) -> Set[str]:
         if node.type == "macro_definition":
             # Check if previous sibling is #[macro_export] attribute
             has_macro_export = False
-            if i > 0 and children[i-1].type == "attribute_item":
-                attr_text = source_bytes[children[i-1].start_byte:children[i-1].end_byte].decode('utf-8')
+            if i > 0 and children[i - 1].type == "attribute_item":
+                attr_text = source_bytes[
+                    children[i - 1].start_byte : children[i - 1].end_byte
+                ].decode("utf-8")
                 if "macro_export" in attr_text:
                     has_macro_export = True
 
@@ -109,7 +112,9 @@ def extract_macro_exports(file_path: Path) -> Set[str]:
             if has_macro_export:
                 for child in node.children:
                     if child.type == "identifier":
-                        macro_name = source_bytes[child.start_byte:child.end_byte].decode('utf-8')
+                        macro_name = source_bytes[
+                            child.start_byte : child.end_byte
+                        ].decode("utf-8")
                         macro_names.add(macro_name)
                         break
 
@@ -156,7 +161,9 @@ def extract_dependencies(
                 # Extract the module name
                 for child in node.children:
                     if child.type == "identifier":
-                        mod_name = source_bytes[child.start_byte:child.end_byte].decode('utf-8')
+                        mod_name = source_bytes[
+                            child.start_byte : child.end_byte
+                        ].decode("utf-8")
                         # Add as a submodule of current context
                         raw_dependencies.append((mod_name,))
                         break
@@ -164,8 +171,14 @@ def extract_dependencies(
         # Extract use declarations
         if node.type == "use_declaration":
             for child in node.children:
-                if child.type in ("scoped_identifier", "identifier", "scoped_use_list",
-                                  "use_list", "use_wildcard", "use_as_clause"):
+                if child.type in (
+                    "scoped_identifier",
+                    "identifier",
+                    "scoped_use_list",
+                    "use_list",
+                    "use_wildcard",
+                    "use_as_clause",
+                ):
                     _extract_use_paths(child, [], raw_dependencies, source_bytes)
                     break
 
@@ -213,12 +226,12 @@ def _extract_use_paths(
     node: Any,
     prefix: List[str],
     dependencies: List[Tuple[str, ...]],
-    source_bytes: bytes
+    source_bytes: bytes,
 ) -> None:
     """Recursively extract use paths from a use tree node."""
 
     if node.type == "identifier":
-        name = source_bytes[node.start_byte:node.end_byte].decode('utf-8')
+        name = source_bytes[node.start_byte : node.end_byte].decode("utf-8")
         dependencies.append(tuple(prefix + [name]))
 
     elif node.type == "scoped_identifier":
@@ -241,7 +254,9 @@ def _extract_use_paths(
         for child in node.children:
             if child.type in ("identifier", "scoped_identifier"):
                 if child.type == "identifier":
-                    name = source_bytes[child.start_byte:child.end_byte].decode('utf-8')
+                    name = source_bytes[child.start_byte : child.end_byte].decode(
+                        "utf-8"
+                    )
                     dependencies.append(tuple(prefix + [name]))
                 else:
                     path_parts = _extract_scoped_path(child, source_bytes)
@@ -256,7 +271,9 @@ def _extract_use_paths(
         for child in node.children:
             if child.type == "scoped_identifier" or child.type == "identifier":
                 if child.type == "identifier":
-                    name = source_bytes[child.start_byte:child.end_byte].decode('utf-8')
+                    name = source_bytes[child.start_byte : child.end_byte].decode(
+                        "utf-8"
+                    )
                     new_prefix.append(name)
                 else:
                     new_prefix.extend(_extract_scoped_path(child, source_bytes))
@@ -282,10 +299,10 @@ def _extract_scoped_path(node: Any, source_bytes: bytes) -> List[str]:
 
     def walk_path(n: Any) -> None:
         if n.type == "identifier":
-            name = source_bytes[n.start_byte:n.end_byte].decode('utf-8')
+            name = source_bytes[n.start_byte : n.end_byte].decode("utf-8")
             segments.append(name)
         elif n.type in ("self", "super", "crate"):
-            name = source_bytes[n.start_byte:n.end_byte].decode('utf-8')
+            name = source_bytes[n.start_byte : n.end_byte].decode("utf-8")
             segments.append(name)
         elif n.type == "scoped_identifier":
             for child in n.children:

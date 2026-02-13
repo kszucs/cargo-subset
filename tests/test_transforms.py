@@ -10,7 +10,6 @@ import textwrap
 from pathlib import Path
 from unittest.mock import Mock
 
-import pytest
 
 from cargo_subset.modules import Module
 from cargo_subset.transforms import Transform
@@ -142,6 +141,7 @@ class TestTransformBase:
 # Placeholder test classes for each transform
 # These will be populated as we port each transform
 
+
 class TestRewriteMacroRefs:
     """Tests for RewriteMacroRefs transform."""
 
@@ -161,8 +161,7 @@ class TestRewriteMacroRefs:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_module"],
-            current_crate="my_module"
+            crates=["my_module"], current_crate="my_module"
         )
 
         transform = RewriteMacroRefs(modules_dict)
@@ -191,8 +190,7 @@ class TestRewriteMacroRefs:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["xet_config"],
-            current_crate="xet_config"
+            crates=["xet_config"], current_crate="xet_config"
         )
 
         transform = RewriteMacroRefs(modules_dict)
@@ -220,8 +218,7 @@ class TestRewriteCrateImports:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate"],
-            current_crate="my_crate"
+            crates=["my_crate"], current_crate="my_crate"
         )
 
         transform = RewriteCrateImports(modules_dict)
@@ -242,8 +239,7 @@ class TestRewriteCrateImports:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["core"],
-            current_crate="core"
+            crates=["core"], current_crate="core"
         )
 
         transform = RewriteCrateImports(modules_dict)
@@ -268,8 +264,7 @@ class TestRewriteCrossCreateImports:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate", "cas_client", "cas_object"],
-            current_crate="my_crate"
+            crates=["my_crate", "cas_client", "cas_object"], current_crate="my_crate"
         )
 
         transform = RewriteCrossCreateImports(modules_dict)
@@ -290,11 +285,12 @@ class TestRewriteCrossCreateImports:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["data", "xet_runtime"],
-            current_crate="data"
+            crates=["data", "xet_runtime"], current_crate="data"
         )
 
-        transform = RewriteCrossCreateImports(modules_dict, macro_export_names={"global_semaphore_handle"})
+        transform = RewriteCrossCreateImports(
+            modules_dict, macro_export_names={"global_semaphore_handle"}
+        )
         rewritten = transform.apply(current_module, text)
 
         # Macro should be at crate root
@@ -315,7 +311,7 @@ class TestRewriteCrossCreateImports:
 
         modules_dict, current_module = make_modules_dict(
             crates=["my_crate", "other_crate", "another_crate"],
-            current_crate="my_crate"
+            current_crate="my_crate",
         )
 
         transform = RewriteCrossCreateImports(modules_dict)
@@ -340,8 +336,7 @@ class TestRewritePathReferences:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate", "cas_client", "cas_object"],
-            current_crate="my_crate"
+            crates=["my_crate", "cas_client", "cas_object"], current_crate="my_crate"
         )
 
         transform = RewritePathReferences(modules_dict)
@@ -362,11 +357,12 @@ class TestRewritePathReferences:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate", "other_crate"],
-            current_crate="my_crate"
+            crates=["my_crate", "other_crate"], current_crate="my_crate"
         )
 
-        transform = RewritePathReferences(modules_dict, macro_export_names={"config_group"})
+        transform = RewritePathReferences(
+            modules_dict, macro_export_names={"config_group"}
+        )
         rewritten = transform.apply(current_module, text)
 
         # Regular paths should be rewritten with crate prefix
@@ -394,11 +390,12 @@ class TestRewritePathReferences:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate", "utils"],
-            current_crate="my_crate"
+            crates=["my_crate", "utils"], current_crate="my_crate"
         )
 
-        transform = RewritePathReferences(modules_dict, macro_export_names={"test_configurable_constants"})
+        transform = RewritePathReferences(
+            modules_dict, macro_export_names={"test_configurable_constants"}
+        )
         rewritten = transform.apply(current_module, text)
 
         # Module prefixes should be rewritten to crate:: for macro invocations
@@ -424,8 +421,7 @@ class TestFixBareCrateRefs:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["xet_config"],
-            current_crate="xet_config"
+            crates=["xet_config"], current_crate="xet_config"
         )
 
         transform = FixBareCrateRefs(modules_dict)
@@ -433,7 +429,9 @@ class TestFixBareCrateRefs:
 
         # Should preserve paths, NOT double up to crate::xet_config::xet_config::
         assert "crate::xet_config::ENVIRONMENT_NAME_ALIASES" in rewritten
-        assert "crate::xet_config::xet_config::ENVIRONMENT_NAME_ALIASES" not in rewritten
+        assert (
+            "crate::xet_config::xet_config::ENVIRONMENT_NAME_ALIASES" not in rewritten
+        )
 
     def test_rewrites_bare_crate_refs(self):
         """Test that bare crate:: is rewritten to crate::{current}::."""
@@ -447,8 +445,7 @@ class TestFixBareCrateRefs:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate"],
-            current_crate="my_crate"
+            crates=["my_crate"], current_crate="my_crate"
         )
 
         transform = FixBareCrateRefs(modules_dict)
@@ -470,8 +467,7 @@ class TestFixBareCrateRefs:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_crate"],
-            current_crate="my_crate"
+            crates=["my_crate"], current_crate="my_crate"
         )
 
         transform = FixBareCrateRefs(modules_dict)
@@ -500,8 +496,7 @@ class TestFixSelfPubUses:
         )
 
         modules_dict, current_module = make_modules_dict(
-            crates=["xet_config", "other_module"],
-            current_crate="xet_config"
+            crates=["xet_config", "other_module"], current_crate="xet_config"
         )
 
         transform = FixSelfPubUses(modules_dict)
@@ -521,8 +516,7 @@ class TestFixSelfPubUses:
         text = "pub use crate::my_module::Item;  \n"
 
         modules_dict, current_module = make_modules_dict(
-            crates=["my_module"],
-            current_crate="my_module"
+            crates=["my_module"], current_crate="my_module"
         )
 
         transform = FixSelfPubUses(modules_dict)
@@ -549,7 +543,7 @@ class TestFixBareImports:
         modules_dict, current_module = make_modules_dict(
             crates=["my_crate"],
             current_crate="my_crate",
-            current_file=Path("/test/shard_file.rs")
+            current_file=Path("/test/shard_file.rs"),
         )
 
         transform = FixBareImports(modules_dict)
@@ -575,7 +569,7 @@ class TestFixBareImports:
         modules_dict, current_module = make_modules_dict(
             crates=["my_crate"],
             current_crate="my_crate",
-            current_file=Path("/test/mod.rs")
+            current_file=Path("/test/mod.rs"),
         )
 
         transform = FixBareImports(modules_dict)
@@ -603,7 +597,7 @@ class TestFixBareImports:
         modules_dict, current_module = make_modules_dict(
             crates=["my_crate"],
             current_crate="my_crate",
-            current_file=Path("/test/regular.rs")
+            current_file=Path("/test/regular.rs"),
         )
 
         transform = FixBareImports(modules_dict)
@@ -636,7 +630,7 @@ class TestPruneMods:
             crates=["my_crate"],
             present_files=[present_child],
             current_crate="my_crate",
-            current_file=Path("/test/mycrate/mod.rs")
+            current_file=Path("/test/mycrate/mod.rs"),
         )
 
         transform = PruneMods(modules_dict)
@@ -663,7 +657,7 @@ class TestPruneMods:
             crates=["my_crate"],
             present_files=[],
             current_crate="my_crate",
-            current_file=Path("/tmp/test/lib.rs")
+            current_file=Path("/tmp/test/lib.rs"),
         )
 
         transform = PruneMods(modules_dict)
@@ -684,7 +678,7 @@ class TestPruneMods:
             crates=["my_crate"],
             present_files=[child_of_mod],
             current_crate="my_crate",
-            current_file=Path("/test/parent/mod.rs")
+            current_file=Path("/test/parent/mod.rs"),
         )
 
         transform = PruneMods(modules_dict_mod)
@@ -698,7 +692,7 @@ class TestPruneMods:
             crates=["my_crate"],
             present_files=[child_of_foo],
             current_crate="my_crate",
-            current_file=Path("/test/parent/foo.rs")
+            current_file=Path("/test/parent/foo.rs"),
         )
 
         transform_foo = PruneMods(modules_dict_foo)
@@ -728,7 +722,7 @@ class TestPrunePubUses:
             crates=["my_crate"],
             present_files=[available],
             current_crate="my_crate",
-            current_file=Path("/test/src/lib.rs")
+            current_file=Path("/test/src/lib.rs"),
         )
 
         transform = PrunePubUses(modules_dict)
@@ -761,7 +755,7 @@ class TestPrunePubUses:
             crates=["my_crate"],
             present_files=[],
             current_crate="my_crate",
-            current_file=Path("/test/src/lib.rs")
+            current_file=Path("/test/src/lib.rs"),
         )
 
         transform = PrunePubUses(modules_dict)

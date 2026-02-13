@@ -4,15 +4,12 @@ Integration tests using a realistic workspace fixture.
 These tests validate the entire packaging pipeline using a gold-standard
 fixture containing multiple crates with various problematic patterns.
 """
-import subprocess
-from pathlib import Path
 
-import pytest
+import subprocess
+
 
 from cargo_subset import metadata, packager
-from cargo_subset.ast import extract_dependencies
 from conftest import compare_directories
-
 
 
 class TestEndToEndTransformations:
@@ -31,14 +28,16 @@ class TestEndToEndTransformations:
             entry_crate="core",
             entry_module="storage_client",
             output_dir=output_dir,
-            new_crate_name="extracted_storage_client"
+            new_crate_name="extracted_storage_client",
         )
 
         # Compare against expected output
         expected_dir = fixtures_dir / "extracted_storage_client"
         differences = compare_directories(extracted, expected_dir)
 
-        assert not differences, f"Output differs from expected:\n" + "\n".join(differences)
+        assert not differences, "Output differs from expected:\n" + "\n".join(
+            differences
+        )
 
     def test_extract_client_crate(self, fixtures_dir, tmp_path):
         """Test extracting full client crate with cross-crate transformations."""
@@ -53,14 +52,16 @@ class TestEndToEndTransformations:
             entry_crate="client",
             entry_module="crate",
             output_dir=output_dir,
-            new_crate_name="extracted_client"
+            new_crate_name="extracted_client",
         )
 
         # Compare against expected output
-        expected_dir = fixtures_dir  / "extracted_client"
+        expected_dir = fixtures_dir / "extracted_client"
         differences = compare_directories(extracted, expected_dir)
 
-        assert not differences, f"Output differs from expected:\n" + "\n".join(differences)
+        assert not differences, "Output differs from expected:\n" + "\n".join(
+            differences
+        )
 
 
 class TestEndToEndProperties:
@@ -76,12 +77,15 @@ class TestEndToEndProperties:
             if "lazy_static!" in content:
                 # Check if file has lazy_static import or imports configuration_utils (which re-exports it)
                 has_lazy_static_import = "use lazy_static::lazy_static" in content
-                has_config_utils_import = "use crate::utils::configuration_utils" in content or \
-                                         "pub use lazy_static::lazy_static" in content
+                has_config_utils_import = (
+                    "use crate::utils::configuration_utils" in content
+                    or "pub use lazy_static::lazy_static" in content
+                )
 
                 # File should have one of these ways to access lazy_static!
-                assert has_lazy_static_import or has_config_utils_import, \
+                assert has_lazy_static_import or has_config_utils_import, (
                     f"File {rust_file} uses lazy_static! but doesn't import it"
+                )
 
     def test_no_unqualified_crate_refs_after_rewrite(self, fixture_workspace, tmp_path):
         """Test that workspace crate refs are qualified after rewriting."""
@@ -96,7 +100,7 @@ class TestEndToEndProperties:
             entry_crate="client",
             entry_module="crate",
             output_dir=output_dir,
-            new_crate_name="extracted_client"
+            new_crate_name="extracted_client",
         )
 
         # Read the extracted client lib.rs
@@ -123,7 +127,9 @@ class TestEndToEndProperties:
         assert "lazy_static!" in all_content, "Missing lazy_static usage"
         assert "pub mod" in all_content, "Missing pub mod declarations"
         assert "#[macro_export]" in all_content, "Missing macro exports"
-        assert "use super::" in all_content or "pub use" in all_content, "Missing relative imports"
+        assert "use super::" in all_content or "pub use" in all_content, (
+            "Missing relative imports"
+        )
 
 
 class TestCargoCompatibility:
@@ -136,7 +142,7 @@ class TestCargoCompatibility:
             cwd=fixture_workspace,
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
         )
 
         if result.returncode != 0:
@@ -144,9 +150,7 @@ class TestCargoCompatibility:
             print("STDERR:", result.stderr)
 
         assert result.returncode == 0, (
-            f"cargo check failed:\n"
-            f"stdout: {result.stdout}\n"
-            f"stderr: {result.stderr}"
+            f"cargo check failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
         )
 
     def test_cargo_test_succeeds(self, fixture_workspace):
@@ -156,7 +160,7 @@ class TestCargoCompatibility:
             cwd=fixture_workspace,
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
         )
 
         if result.returncode != 0:
@@ -164,9 +168,7 @@ class TestCargoCompatibility:
             print("STDERR:", result.stderr)
 
         assert result.returncode == 0, (
-            f"cargo test failed:\n"
-            f"stdout: {result.stdout}\n"
-            f"stderr: {result.stderr}"
+            f"cargo test failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
         )
 
     def test_cargo_check_individual_crates(self, fixture_workspace):
@@ -179,7 +181,7 @@ class TestCargoCompatibility:
                 cwd=fixture_workspace,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
             )
 
             if result.returncode != 0:
@@ -191,4 +193,3 @@ class TestCargoCompatibility:
                 f"stdout: {result.stdout}\n"
                 f"stderr: {result.stderr}"
             )
-

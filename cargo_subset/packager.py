@@ -102,7 +102,8 @@ def write_cargo_toml(
     # Filter dependencies: keep only external, non-optional dependencies
     if merged_pkg:
         external_deps = [
-            dep for dep in merged_pkg.dependencies
+            dep
+            for dep in merged_pkg.dependencies
             if not dep.optional
             and dep.name not in included_crates
             and not workspace.is_workspace_member(dep.name)
@@ -165,7 +166,9 @@ def build_single_crate(
         Path to the generated crate root directory
     """
     # Step 1: Collect reachable modules
-    symbol = f"{entry_crate}::{entry_module}" if entry_module != "crate" else entry_crate
+    symbol = (
+        f"{entry_crate}::{entry_module}" if entry_module != "crate" else entry_crate
+    )
     parts = symbol.split("::")
     module_id = tuple(parts[1:]) if len(parts) > 1 else ()
     id = (entry_crate,) + module_id

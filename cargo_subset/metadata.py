@@ -142,7 +142,9 @@ class Crate:
                 if feature_name in merged_features:
                     # Combine feature dependencies, preserving order and removing duplicates
                     existing = merged_features[feature_name]
-                    merged_features[feature_name] = existing + [d for d in feature_deps if d not in existing]
+                    merged_features[feature_name] = existing + [
+                        d for d in feature_deps if d not in existing
+                    ]
                 else:
                     merged_features[feature_name] = feature_deps
 
@@ -212,9 +214,9 @@ class Crate:
                 feature_deps = self.features[feature_name]
                 if feature_deps:
                     deps_str = ", ".join(f'"{dep}"' for dep in feature_deps)
-                    lines.append(f'{feature_name} = [{deps_str}]')
+                    lines.append(f"{feature_name} = [{deps_str}]")
                 else:
-                    lines.append(f'{feature_name} = []')
+                    lines.append(f"{feature_name} = []")
             lines.append("")
 
         return "\n".join(lines)
@@ -280,7 +282,9 @@ class Workspace:
                         version=version_req,
                         kind=dep.get("kind"),
                         optional=bool(dep.get("optional", False)),
-                        uses_default_features=bool(dep.get("uses_default_features", True)),
+                        uses_default_features=bool(
+                            dep.get("uses_default_features", True)
+                        ),
                         features=list(dep.get("features", [])),
                         target=dep.get("target"),
                     )
@@ -336,8 +340,12 @@ class Workspace:
                 text=True,
             )
         except (OSError, subprocess.CalledProcessError) as exc:
-            stderr = exc.stderr if isinstance(exc, subprocess.CalledProcessError) else ""
-            raise CargoMetadataError(f"Failed to run cargo metadata: {exc}\n{stderr}") from exc
+            stderr = (
+                exc.stderr if isinstance(exc, subprocess.CalledProcessError) else ""
+            )
+            raise CargoMetadataError(
+                f"Failed to run cargo metadata: {exc}\n{stderr}"
+            ) from exc
 
         try:
             metadata = json.loads(completed.stdout)
@@ -353,6 +361,7 @@ class CargoMetadataError(RuntimeError):
 
 class DependencyMergeError(Exception):
     """Raised when dependency version requirements cannot be merged."""
+
     pass
 
 
@@ -523,7 +532,9 @@ class Dependency:
             version = merged
 
         optional = self.optional and other.optional
-        uses_default_features = self.uses_default_features and other.uses_default_features
+        uses_default_features = (
+            self.uses_default_features and other.uses_default_features
+        )
         features = sorted(set(self.features) | set(other.features))
 
         return Dependency(

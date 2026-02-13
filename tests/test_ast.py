@@ -22,11 +22,13 @@ class TestExtractDependencies:
     def test_multiple_mod_declarations(self, tmp_path: Path):
         """Test extracting multiple mod declarations."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             mod foo;
             pub mod bar;
             mod baz;
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate"})
         assert ("my_crate", ("foo",)) in deps
@@ -36,10 +38,12 @@ class TestExtractDependencies:
     def test_inline_mod_ignored(self, tmp_path: Path):
         """Test that inline mod with body is ignored."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             mod foo;
             mod bar { fn test() {} }
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate"})
         # Only foo should be included, not bar (has body)
@@ -84,10 +88,12 @@ class TestExtractDependencies:
     def test_self_and_super_use(self, tmp_path: Path):
         """Test extracting self and super use statements."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             use self::foo;
             use super::bar;
-        """))
+        """)
+        )
 
         # Test from a nested module context
         deps = extract_dependencies(("my_crate", "submod"), test_file, {"my_crate"})
@@ -118,12 +124,14 @@ class TestExtractDependencies:
     def test_mixed_declarations(self, tmp_path: Path):
         """Test extracting mixed mod and use declarations."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             mod internal;
             pub mod public;
             use crate::foo::Bar;
             use external::Baz;
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate", "external"})
         assert ("my_crate", ("internal",)) in deps
@@ -210,12 +218,14 @@ class TestExtractMacroExports:
     def test_macro_with_export_attribute(self, tmp_path: Path):
         """Test detecting macro with #[macro_export]."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             #[macro_export]
             macro_rules! my_macro {
                 ($x:expr) => { println!("{}", $x) };
             }
-        """))
+        """)
+        )
 
         macros = extract_macro_exports(test_file)
         assert "my_macro" in macros
@@ -223,11 +233,13 @@ class TestExtractMacroExports:
     def test_macro_without_export_attribute(self, tmp_path: Path):
         """Test that macro without #[macro_export] is not detected."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             macro_rules! local_macro {
                 ($x:expr) => { println!("{}", $x) };
             }
-        """))
+        """)
+        )
 
         macros = extract_macro_exports(test_file)
         assert len(macros) == 0
@@ -235,7 +247,8 @@ class TestExtractMacroExports:
     def test_multiple_macros(self, tmp_path: Path):
         """Test detecting multiple exported macros."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             #[macro_export]
             macro_rules! macro_one {
                 () => { };
@@ -249,7 +262,8 @@ class TestExtractMacroExports:
             macro_rules! macro_two {
                 () => { };
             }
-        """))
+        """)
+        )
 
         macros = extract_macro_exports(test_file)
         assert "macro_one" in macros
@@ -290,10 +304,12 @@ class TestEdgeCases:
     def test_file_with_only_comments(self, tmp_path: Path):
         """Test extracting from file with only comments."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             // This is a comment
             /* This is a block comment */
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate"})
         assert deps == []
@@ -301,13 +317,15 @@ class TestEdgeCases:
     def test_file_with_attributes(self, tmp_path: Path):
         """Test extracting with attributes on declarations."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             #[cfg(test)]
             mod tests;
 
             #[path = "custom.rs"]
             mod custom;
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate"})
         assert ("my_crate", ("tests",)) in deps
@@ -316,10 +334,12 @@ class TestEdgeCases:
     def test_pub_use_statements(self, tmp_path: Path):
         """Test extracting pub use statements."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             pub use foo::bar;
             pub(crate) use baz::qux;
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate"})
         assert ("my_crate", ("foo", "bar")) in deps
@@ -328,13 +348,15 @@ class TestEdgeCases:
     def test_complex_nested_structure(self, tmp_path: Path):
         """Test extracting from complex nested structure."""
         test_file = tmp_path / "test.rs"
-        test_file.write_text(dedent("""
+        test_file.write_text(
+            dedent("""
             pub mod outer {
                 mod inner;
                 use super::foo;
             }
             use crate::bar::{baz::{a, b}, c};
-        """))
+        """)
+        )
 
         deps = extract_dependencies(("my_crate",), test_file, {"my_crate"})
         # Should find inner mod and all use statements

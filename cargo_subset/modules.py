@@ -25,6 +25,7 @@ class Module:
 
     Example: ('core', 'utils', 'helpers') represents core::utils::helpers
     """
+
     id: Tuple[str, ...]
     file: Path
     depends_on: List["Module"] = field(default_factory=list)
@@ -138,4 +139,3 @@ def modules(
     cache: Dict[Tuple[str, ...], Module] = {}
     Module.from_id(workspace, id, cache)
     return cache
-

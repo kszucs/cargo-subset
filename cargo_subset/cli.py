@@ -38,7 +38,9 @@ def cli() -> None:
     show_default=True,
     help="Whether to print source file paths alongside modules",
 )
-def tree(workspace_path: Path, crate_name: str, module_path: str, show_files: bool) -> None:
+def tree(
+    workspace_path: Path, crate_name: str, module_path: str, show_files: bool
+) -> None:
     """Display dependency tree for a module."""
     try:
         workspace = Workspace.from_cargo(workspace_path)
@@ -99,7 +101,9 @@ def tree(workspace_path: Path, crate_name: str, module_path: str, show_files: bo
     show_default=True,
     help="Directory where the new crate will be written",
 )
-@click.option("--name", "new_crate_name", required=True, help="Name for the generated crate")
+@click.option(
+    "--name", "new_crate_name", required=True, help="Name for the generated crate"
+)
 @click.option(
     "--force",
     is_flag=True,
@@ -123,7 +127,10 @@ def pack(
 
     dest = output_dir / new_crate_name
     if dest.exists() and any(dest.iterdir()) and not force:
-        click.echo(f"Destination {dest} exists and is not empty. Use --force to override.", err=True)
+        click.echo(
+            f"Destination {dest} exists and is not empty. Use --force to override.",
+            err=True,
+        )
         sys.exit(2)
     dest.mkdir(parents=True, exist_ok=True)
 
@@ -140,8 +147,6 @@ def pack(
         sys.exit(3)
 
     click.echo(f"Generated crate at {out_path}")
-
-
 
 
 if __name__ == "__main__":

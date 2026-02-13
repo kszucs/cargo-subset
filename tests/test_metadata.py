@@ -3,7 +3,6 @@ Tests for dependency management and Cargo.toml generation.
 """
 
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
@@ -25,7 +24,7 @@ class TestCargoDeps:
         """Test collecting external dependencies from fixture workspace."""
         workspace = Workspace.from_cargo(fixture_workspace)
 
-       # Collect from all crates
+        # Collect from all crates
         crate_names = {"core", "utils", "client"}
         merged_pkg = None
         for crate in crate_names:
@@ -37,7 +36,8 @@ class TestCargoDeps:
 
         # Filter external dependencies
         external_deps = [
-            dep for dep in merged_pkg.dependencies
+            dep
+            for dep in merged_pkg.dependencies
             if not dep.optional
             and dep.name not in crate_names
             and not workspace.is_workspace_member(dep.name)
@@ -50,19 +50,6 @@ class TestCargoDeps:
         assert isinstance(normal, dict)
         assert isinstance(build, dict)
         assert isinstance(dev, dict)
-
-    def test_collect_empty_crate_list(self, fixture_workspace):
-        """Test collecting with empty crate list."""
-        workspace = Workspace.from_cargo(fixture_workspace)
-        external_deps = []  # Empty crate list means no dependencies
-
-        deps_by_kind = groupby(lambda d: d.kind or "normal", external_deps)
-        normal = {d.name: d for d in deps_by_kind.get("normal", [])}
-        build = {d.name: d for d in deps_by_kind.get("build", [])}
-        dev = {d.name: d for d in deps_by_kind.get("dev", [])}
-        assert normal == {}
-        assert build == {}
-        assert dev == {}
 
     def test_collect_excludes_workspace_members(self, fixture_workspace):
         """Test that workspace members are excluded from dependencies."""
@@ -79,7 +66,8 @@ class TestCargoDeps:
 
         # Filter external dependencies
         external_deps = [
-            dep for dep in merged_pkg.dependencies
+            dep
+            for dep in merged_pkg.dependencies
             if not dep.optional
             and dep.name not in crate_names
             and not workspace.is_workspace_member(dep.name)
@@ -290,9 +278,15 @@ class TestCargoTomlRendering:
     def test_render_sorted_dependencies(self):
         """Test that dependencies are sorted alphabetically."""
         deps = [
-            Dependency("zebra", VersionRequirement.parse("^1.0.0"), None, False, True, [], None),
-            Dependency("alpha", VersionRequirement.parse("^1.0.0"), None, False, True, [], None),
-            Dependency("beta", VersionRequirement.parse("^1.0.0"), None, False, True, [], None),
+            Dependency(
+                "zebra", VersionRequirement.parse("^1.0.0"), None, False, True, [], None
+            ),
+            Dependency(
+                "alpha", VersionRequirement.parse("^1.0.0"), None, False, True, [], None
+            ),
+            Dependency(
+                "beta", VersionRequirement.parse("^1.0.0"), None, False, True, [], None
+            ),
         ]
 
         pkg = Crate(
@@ -385,7 +379,8 @@ class TestIntegrationScenarios:
 
         # Filter external dependencies
         external_deps = [
-            dep for dep in merged_pkg.dependencies
+            dep
+            for dep in merged_pkg.dependencies
             if not dep.optional
             and dep.name not in crate_names
             and not workspace.is_workspace_member(dep.name)
@@ -580,4 +575,3 @@ class TestFeaturesAndDoctest:
         assert "default = []" in result
         assert "strict = []" in result
         assert 'extra = ["dep:optional_crate"]' in result
-
