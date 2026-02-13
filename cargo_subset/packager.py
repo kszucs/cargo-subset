@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .ast import extract_macro_exports
-from .metadata import Workspace, Crate
+from .metadata import Workspace, Crate, Target
 from .modules import modules
 from .rewrites import TransformContext, apply_rewrites
 
@@ -107,17 +107,39 @@ def write_cargo_toml(
             and dep.name not in included_crates
             and not workspace.is_workspace_member(dep.name)
         ]
+        merged_features = merged_pkg.features
     else:
         external_deps = []
+        merged_features = None
+
+    # Check if any included crate has doctest=false on lib target
+    doctest = True
+    for crate_name in included_crates:
+        crate = workspace.crate(crate_name)
+        for target in crate.targets:
+            if target.is_lib and not target.doctest:
+                doctest = False
+                break
+        if not doctest:
+            break
+
+    # Create lib target with appropriate doctest flag
+    lib_target = Target(
+        name=new_crate_name,
+        kind=["lib"],
+        src_path=dest_root / "src" / "lib.rs",
+        doctest=doctest,
+    )
 
     # Create synthetic package for rendering
     pkg = Crate(
         id=f"{new_crate_name}#0.1.0",
         name=new_crate_name,
         manifest_path=Path(new_crate_name) / "Cargo.toml",
-        targets=[],
+        targets=[lib_target],
         dependencies=external_deps,
         edition=edition,
+        features=merged_features,
     )
     cargo_toml = pkg.render()
     (dest_root / "Cargo.toml").write_text(cargo_toml)

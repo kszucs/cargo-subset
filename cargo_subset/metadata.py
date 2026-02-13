@@ -14,6 +14,7 @@ class Target:
     name: str
     kind: List[str]
     src_path: Path
+    doctest: bool = True
 
     @property
     def is_lib(self) -> bool:
@@ -32,6 +33,7 @@ class Crate:
     targets: List[Target]
     dependencies: List["Dependency"]
     edition: Optional[str] = None
+    features: Optional[Dict[str, List[str]]] = None
 
     @property
     def root(self) -> Target:
@@ -105,7 +107,7 @@ class Crate:
             other: Another package whose dependencies to merge
 
         Returns:
-            New Crate with merged dependencies
+            New Crate with merged dependencies and features
 
         Raises:
             DependencyMergeError: If version requirements cannot be merged
@@ -131,6 +133,19 @@ class Crate:
                 # In both, merge them
                 merged_deps.append(self_dep.merge(other_dep))
 
+        # Merge features
+        merged_features = {}
+        if self.features:
+            merged_features.update(self.features)
+        if other.features:
+            for feature_name, feature_deps in other.features.items():
+                if feature_name in merged_features:
+                    # Combine feature dependencies, preserving order and removing duplicates
+                    existing = merged_features[feature_name]
+                    merged_features[feature_name] = existing + [d for d in feature_deps if d not in existing]
+                else:
+                    merged_features[feature_name] = feature_deps
+
         return Crate(
             id=self.id,
             name=self.name,
@@ -138,6 +153,7 @@ class Crate:
             targets=self.targets,
             dependencies=merged_deps,
             edition=self.edition,
+            features=merged_features if merged_features else None,
         )
 
     def render(self) -> str:
@@ -161,6 +177,13 @@ class Crate:
         lines.append(f'edition = "{self.edition or "2021"}"')
         lines.append("")
 
+        # [lib] section for doctest flag if needed
+        lib_targets = [t for t in self.targets if t.is_lib]
+        if lib_targets and not lib_targets[0].doctest:
+            lines.append("[lib]")
+            lines.append("doctest = false")
+            lines.append("")
+
         # Dependencies
         if normal:
             lines.append("[dependencies]")
@@ -180,6 +203,18 @@ class Crate:
             lines.append("[dev-dependencies]")
             for key in sorted(dev):
                 lines.append(f"{key} = {dev[key].render()}")
+            lines.append("")
+
+        # Features
+        if self.features:
+            lines.append("[features]")
+            for feature_name in sorted(self.features.keys()):
+                feature_deps = self.features[feature_name]
+                if feature_deps:
+                    deps_str = ", ".join(f'"{dep}"' for dep in feature_deps)
+                    lines.append(f'{feature_name} = [{deps_str}]')
+                else:
+                    lines.append(f'{feature_name} = []')
             lines.append("")
 
         return "\n".join(lines)
@@ -227,6 +262,7 @@ class Workspace:
                         name=target["name"],
                         kind=list(target.get("kind", [])),
                         src_path=Path(target["src_path"]).resolve(),
+                        doctest=bool(target.get("doctest", True)),
                     )
                 )
             deps: List[Dependency] = []
@@ -249,6 +285,12 @@ class Workspace:
                         target=dep.get("target"),
                     )
                 )
+            # Parse features
+            features_dict = pkg.get("features")
+            features = None
+            if features_dict:
+                features = {k: list(v) for k, v in features_dict.items()}
+
             crate = Crate(
                 id=pkg["id"],
                 name=pkg["name"],
@@ -256,6 +298,7 @@ class Workspace:
                 targets=targets,
                 dependencies=deps,
                 edition=pkg.get("edition"),
+                features=features,
             )
             crates[crate.name] = crate
 

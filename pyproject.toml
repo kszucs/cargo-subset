@@ -19,3 +19,6 @@ dependencies = [
 
 [project.scripts]
 cargo-subset = "cargo_subset.cli:cli"
+
+[tool.setuptools]
+packages = ["cargo_subset"]

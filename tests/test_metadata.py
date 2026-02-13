@@ -191,9 +191,8 @@ class TestDependencyRender:
         )
 
         result = dep.render()
-        assert 'version = "^1"' in result
-        assert result.startswith("{")
-        assert result.endswith("}")
+        # Simple dependencies are rendered as just version strings
+        assert result == '"1.0"'
 
     def test_render_with_features(self):
         """Test rendering dependency with features."""
@@ -415,3 +414,170 @@ class TestIntegrationScenarios:
 def fixture_workspace():
     """Fixture providing the test workspace path."""
     return Path(__file__).parent / "fixtures" / "workspace"
+
+
+class TestFeaturesAndDoctest:
+    """Tests for features and doctest preservation in generated Cargo.toml."""
+
+    def test_render_with_features(self):
+        """Test that features are included in rendered Cargo.toml."""
+        pkg = Crate(
+            id="my_crate#0.1.0",
+            name="my_crate",
+            manifest_path=Path("my_crate/Cargo.toml"),
+            targets=[],
+            dependencies=[],
+            edition="2021",
+            features={
+                "default": ["feature1"],
+                "feature1": [],
+                "feature2": ["dep:optional_dep"],
+            },
+        )
+        result = pkg.render()
+
+        assert "[features]" in result
+        assert 'default = ["feature1"]' in result
+        assert "feature1 = []" in result
+        assert 'feature2 = ["dep:optional_dep"]' in result
+
+    def test_render_with_doctest_false(self):
+        """Test that doctest = false is included when lib target has doctest=false."""
+        from cargo_subset.metadata import Target
+
+        lib_target = Target(
+            name="my_crate",
+            kind=["lib"],
+            src_path=Path("src/lib.rs"),
+            doctest=False,
+        )
+
+        pkg = Crate(
+            id="my_crate#0.1.0",
+            name="my_crate",
+            manifest_path=Path("my_crate/Cargo.toml"),
+            targets=[lib_target],
+            dependencies=[],
+            edition="2021",
+        )
+        result = pkg.render()
+
+        assert "[lib]" in result
+        assert "doctest = false" in result
+
+    def test_render_with_doctest_true(self):
+        """Test that [lib] section is omitted when doctest=true (default)."""
+        from cargo_subset.metadata import Target
+
+        lib_target = Target(
+            name="my_crate",
+            kind=["lib"],
+            src_path=Path("src/lib.rs"),
+            doctest=True,
+        )
+
+        pkg = Crate(
+            id="my_crate#0.1.0",
+            name="my_crate",
+            manifest_path=Path("my_crate/Cargo.toml"),
+            targets=[lib_target],
+            dependencies=[],
+            edition="2021",
+        )
+        result = pkg.render()
+
+        # [lib] section should not be present when doctest is true (default)
+        assert "[lib]" not in result
+
+    def test_merge_features(self):
+        """Test that merging crates combines features."""
+        crate1 = Crate(
+            id="crate1#0.1.0",
+            name="crate1",
+            manifest_path=Path("crate1/Cargo.toml"),
+            targets=[],
+            dependencies=[],
+            edition="2021",
+            features={
+                "default": ["feature1"],
+                "feature1": [],
+            },
+        )
+
+        crate2 = Crate(
+            id="crate2#0.1.0",
+            name="crate2",
+            manifest_path=Path("crate2/Cargo.toml"),
+            targets=[],
+            dependencies=[],
+            edition="2021",
+            features={
+                "default": ["feature2"],
+                "feature2": [],
+                "feature3": ["dep:something"],
+            },
+        )
+
+        merged = crate1.merge(crate2)
+
+        assert merged.features is not None
+        assert "feature1" in merged.features
+        assert "feature2" in merged.features
+        assert "feature3" in merged.features
+        # default should combine both feature1 and feature2
+        assert "feature1" in merged.features["default"]
+        assert "feature2" in merged.features["default"]
+
+    def test_render_full_cargo_toml_with_features_and_doctest(self):
+        """Test rendering a complete Cargo.toml with features and doctest."""
+        from cargo_subset.metadata import Target
+
+        lib_target = Target(
+            name="complete_crate",
+            kind=["lib"],
+            src_path=Path("src/lib.rs"),
+            doctest=False,
+        )
+
+        dep = Dependency(
+            name="serde",
+            version=VersionRequirement.parse("^1.0.0"),
+            kind=None,
+            optional=False,
+            uses_default_features=True,
+            features=["derive"],
+            target=None,
+        )
+
+        pkg = Crate(
+            id="complete_crate#0.1.0",
+            name="complete_crate",
+            manifest_path=Path("complete_crate/Cargo.toml"),
+            targets=[lib_target],
+            dependencies=[dep],
+            edition="2021",
+            features={
+                "default": [],
+                "strict": [],
+                "extra": ["dep:optional_crate"],
+            },
+        )
+
+        result = pkg.render()
+
+        # Check all sections are present
+        assert "[package]" in result
+        assert 'name = "complete_crate"' in result
+        assert 'edition = "2021"' in result
+
+        assert "[lib]" in result
+        assert "doctest = false" in result
+
+        assert "[dependencies]" in result
+        assert "serde" in result
+
+        assert "[features]" in result
+        assert "default = []" in result
+        assert "strict = []" in result
+        assert 'extra = ["dep:optional_crate"]' in result
+
